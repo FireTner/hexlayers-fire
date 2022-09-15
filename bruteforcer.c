@@ -40,6 +40,7 @@ size_t genLut(v16n *lut, size_t lutsize) {
         for(j; j < newsize; j++)
             if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
                 break;
+        
         if(j==newsize) lut[newsize++] = x;
     }
 
@@ -73,7 +74,9 @@ void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result
 }
 
 void outputSeq(unsigned int* sequence) {
-    return; // TODO
+    for(int i = 0; i<50 && sequence[i]>0; i++)
+        printf("%d, ", sequence[i]);
+    printf("\n");
 }
 
 int main(int argc, char **argv) {
