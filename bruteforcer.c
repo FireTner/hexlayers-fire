@@ -10,15 +10,12 @@ typedef unsigned char u8;
 v16n t, one, zero;
 
 v16n comp(v16n a, v16n b, u8 m) {
-    if(m) return _mm_max_epi8(_mm_sub_epi8(a, b), 0);
-    return _mm_and_si128(a, _mm_cmpgt_epi8(b, a));
+    if(m) return _mm_max_epi8(_mm_sub_epi8(a, b), zero);
+    return _mm_and_si128(a, _mm_cmplt_epi8(b, a));
 }
 
 // generates look up table
 size_t genLut(v16n *lut, size_t lutsize) {
-    // very good error handling
-    //if(lutsize < 1024) return -1;
-    
     size_t newsize = 0;
     v16n x;
 
@@ -34,10 +31,10 @@ size_t genLut(v16n *lut, size_t lutsize) {
             comp(_mm_set1_epi8(b), t, mb)
         );
         
-        if( _mm_test_all_zeros(x, one) ) continue;
+        //if( _mm_test_all_zeros(_mm_xor_si128(x, t), one) ) continue;
 
-        int j = 0;
-        for(j; j < newsize; j++)
+        int j;
+        for(j = 0; j < newsize; j++)
             if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
                 break;
         
@@ -49,51 +46,55 @@ size_t genLut(v16n *lut, size_t lutsize) {
 }
 
 void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result) {
-    int counter[50] = { [0 ... 49] = -1 };
     v16n x;
 
+    memset(result, -1, 50);
+
+    printf("Started\n");
     do {
         // increment counter
         for(int i = 0; i < 50; i++) {
-            if(++counter[i]!=lutsize) break;
-            counter[i] = 0;
+            if(result[i]++ != lutsize) break;
+            result[i] = 0;
         }
 
         // do cummulative look up
         x = t;
-        for(int i = 0; counter[i]!=-1; i++)
-            x = _mm_shuffle_epi8(x, lut[counter[i]]);
+        for(int i = 0; result[i]!=-1; i++)
+            x = _mm_shuffle_epi8(x, lut[result[i]]);
         
         // check equality
         x = _mm_xor_si128(x, goal);
     } while(!_mm_testz_si128(x, one));
 
-    printf("0; %2d\n", counter[0]);
-    printf("1; %2d\n", counter[1]);
+    
     printf("findSeq finished\n");
 }
 
-void outputSeq(unsigned int* sequence) {
-    for(int i = 0; i<50 && sequence[i]>0; i++)
-        printf("%d, ", sequence[i]);
+void outputSeq(int* sequence) {
+    for(int i = 0; sequence[i] != -1;) {
+        printf("%d ", sequence[i++]);
+    }
     printf("\n");
 }
 
 int main(int argc, char **argv) {
     // initialize constants and variables
     t = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-    one = _mm_set1_epi8(1);
+    one = _mm_set1_epi8(0xFF);
     zero = _mm_set1_epi8(0);
     
-    v16n goal = _mm_set_epi8(15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14);
+    v16n goal = _mm_set_epi8(
+        3,13,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1,15
+    );
     
     size_t olutsize = 1024;
     v16n *lut = (v16n *)malloc(olutsize * sizeof(v16n));
     int *result = (int *)malloc(50 * sizeof(int));
 
     // generate lut
-    lutsize = genLut(lut, olutsize);
-    printf("lutsize: %zu\n", lutsize);
+    size_t lutsize = genLut(lut, olutsize);
+    printf("lutsize: %zd\n", lutsize);
     if(olutsize>lutsize)
         lut = (v16n *)realloc(lut, lutsize);
     
