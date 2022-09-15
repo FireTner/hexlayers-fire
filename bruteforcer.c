@@ -48,15 +48,24 @@ size_t genLut(v16n *lut, size_t lutsize) {
     return newsize;
 }
 
+inline void increment(int i, int x, const size_t max) {
+    if(++x[i] == max) {
+        x[i] = 0;
+        increment(i+1, x, max);
+    }
+}
+
 void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result) {
     int counter[50] = { [0 ... 49] = -1 };
     v16n x;
 
     do {
         // increment counter
-        for(int i = 0; i < 50; i++) {
-            if(++counter[i]!=lutsize) break;
-            counter[i] = 0;
+        int prev = 0;
+        for(int i = 0; counter[i]>=0; i++) {
+            do increment(i, counter, lutsize);
+            while(!pair[prev][counter[i]])
+            prev = counter[i];
         }
 
         // do cummulative look up
