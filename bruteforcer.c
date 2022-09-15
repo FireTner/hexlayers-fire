@@ -55,7 +55,7 @@ void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result
     do {
         // increment counter
         for(int i = 0; i < 50; i++) {
-            if(counter[i]++!=lutsize) break;
+            if(++counter[i]!=lutsize) break;
             counter[i] = 0;
         }
 
