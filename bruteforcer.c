@@ -33,15 +33,14 @@ size_t genLut(v16n *lut, size_t lutsize) {
             comp(t, _mm_set1_epi8(a), ma),
             comp(_mm_set1_epi8(b), t, mb)
         );
+        
+        if( _mm_test_all_zeros(x, one) ) continue;
 
         int j = 0;
         for(j; j < newsize; j++)
             if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
                 break;
         if(j==newsize) lut[newsize++] = x;
-
-        if(newsize==303) {
-            printf("%d %d %d %d\n", ma
     }
 
     printf("genLut finished\n");
