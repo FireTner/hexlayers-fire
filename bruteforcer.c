@@ -3,17 +3,29 @@
 // debugging
 #include <string.h>
 #include <stdio.h>
+#include <stdalign.h>
 
 typedef __m128i v16n;
 typedef unsigned char u8;
 
 v16n t, one, zero;
 
+void outputSeq(int *sequence);
+
 v16n comp(v16n a, v16n b, u8 m) {
     if(m) return _mm_max_epi8(_mm_sub_epi8(a, b), zero);
-    return _mm_and_si128(a, _mm_cmplt_epi8(b, a));
+    return _mm_andnot_si128(_mm_cmplt_epi8(a, b), a);
 }
 
+void print_v16n(v16n in) {
+    alignas(16) unsigned char v[16];
+    _mm_store_si128((v16n*)v, in);
+    printf(": %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\n",
+           v[0], v[1],  v[2],  v[3],  v[4],  v[5],  v[6],  v[7],
+           v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
+}
+
+// correct
 // generates look up table
 size_t genLut(v16n *lut, size_t lutsize) {
     size_t newsize = 0;
@@ -38,7 +50,10 @@ size_t genLut(v16n *lut, size_t lutsize) {
             if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
                 break;
         
-        if(j==newsize) lut[newsize++] = x;
+        if(j==newsize) {
+            lut[newsize++] = x;
+            print_v16n(x);
+        }
     }
 
     printf("genLut finished\n");
@@ -46,15 +61,16 @@ size_t genLut(v16n *lut, size_t lutsize) {
 }
 
 void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result) {
-    v16n x;
-
-    memset(result, -1, 50);
-
     printf("Started\n");
+    memset(result, -1, 50*sizeof(int));
+    
+    int count = 0;
+    v16n x;
     do {
+        //if(++count%1000000000==0) outputSeq(result);
         // increment counter
         for(int i = 0; i < 50; i++) {
-            if(result[i]++ != lutsize) break;
+            if(++result[i]!=lutsize) break;
             result[i] = 0;
         }
 
@@ -65,7 +81,8 @@ void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result
         
         // check equality
         x = _mm_xor_si128(x, goal);
-    } while(!_mm_testz_si128(x, one));
+        if(_mm_test_all_zeros(x, one)) break;
+    } while(!_mm_test_all_zeros(x, one));
 
     
     printf("findSeq finished\n");
@@ -85,18 +102,16 @@ int main(int argc, char **argv) {
     zero = _mm_set1_epi8(0);
     
     v16n goal = _mm_set_epi8(
-        3,13,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1,15
+        3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15
     );
     
-    size_t olutsize = 1024;
-    v16n *lut = (v16n *)malloc(olutsize * sizeof(v16n));
+    size_t lutsize = 739;
+    v16n *lut = (v16n *)malloc(lutsize * sizeof(v16n));
     int *result = (int *)malloc(50 * sizeof(int));
 
     // generate lut
-    size_t lutsize = genLut(lut, olutsize);
+    lutsize = genLut(lut, lutsize);
     printf("lutsize: %zd\n", lutsize);
-    if(olutsize>lutsize)
-        lut = (v16n *)realloc(lut, lutsize);
     
     // find the sequence
     findSeq(goal, lut, lutsize, result);
