@@ -71,13 +71,13 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
             comp(_mm_set1_epi8(b), t, mb)
         );
 
-        if( _mm_test_all_zeros(_mm_xor_si128(x, t), one) ) continue;
+        if( _mm_testz_si128(_mm_xor_si128(x, t), one) ) continue;
 
         if(uniqueCount(x) < goaluc) continue;
 
         int j;
         for(j = 0; j < newsize; j++)
-            if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
+            if( _mm_testz_si128(_mm_xor_si128(x, lut[j]), one) )
                 break;
         
         if(j==newsize) {
@@ -105,7 +105,7 @@ void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result
         
         // check equality
         x = _mm_xor_si128(x, goal);
-    } while(!_mm_test_all_zeros(x, one));
+    } while(!_mm_testz_si128(x, one));
 }
 
 int main(int argc, char **argv) {
