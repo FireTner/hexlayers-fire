@@ -24,7 +24,7 @@ void outputSeq(int* sequence) {
 void print_v16n(v16n a) {
     alignas(16) unsigned char v[16];
     _mm_store_si128((v16n*)v, a);
-    printf(": %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\n",
+    printf("%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u\n",
            v[0], v[1],  v[2],  v[3],  v[4],  v[5],  v[6],  v[7],
            v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
 }
@@ -71,8 +71,7 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
             comp(_mm_set1_epi8(b), t, mb)
         );
 
-        if( _mm_testz_si128(_mm_xor_si128(x, t), one) ) continue;
-
+        if(_mm_testz_si128(_mm_xor_si128(x, t), one)) continue;
         if(uniqueCount(x) < goaluc) continue;
 
         int j;
@@ -80,10 +79,8 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
             if( _mm_testz_si128(_mm_xor_si128(x, lut[j]), one) )
                 break;
         
-        if(j==newsize) {
+        if(j==newsize)
             lut[newsize++] = x;
-            //printf("%3u (%3x)", (int)newsize-1, i); print_v16n(x);
-        }
     }
 
     return newsize;
