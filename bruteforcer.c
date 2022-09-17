@@ -78,7 +78,7 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
         for(j = 0; j < newsize; j++)
             if( _mm_testz_si128(_mm_xor_si128(x, lut[j]), one) )
                 break;
-        
+
         if(j==newsize)
             lut[newsize++] = x;
     }
@@ -121,6 +121,9 @@ int main(int argc, char **argv) {
     v16n *lut = (v16n *)malloc(lutsize * sizeof(v16n));
     int *result = (int *)malloc(50 * sizeof(int));
 
+    if(lut == NULL || result == NULL)
+        printf("malloc failed\n");
+
     // generate lut
     printf("Generating LUT\n");
     lutsize = genLut(lut, lutsize, goal);
@@ -131,9 +134,11 @@ int main(int argc, char **argv) {
     time_t start = clock();
     findSeq(goal, lut, lutsize, result);
     printf("The search ended in %f\n", ((double)clock())/CLOCKS_PER_SEC);
-    
+
     // output the result
     outputSeq(result);
 
+    free(&lut);
+    free(&result);
     return 0;
 }
