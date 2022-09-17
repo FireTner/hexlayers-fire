@@ -115,9 +115,11 @@ int main(int argc, char **argv) {
     zero = _mm_set1_epi8(0);
     
     v16n goal = _mm_set_epi8(
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+        0, 1, 2, 4, 3, 5, 8, 7, 6, 9, 10, 11, 12, 13, 14, 15
     );
-    
+    // flip goal
+    goal = _mm_shuffle_epi8(goal, _mm_sub_epi8(_mm_set1_epi8(0xF), t));
+
     size_t lutsize = 739;
     v16n *lut = (v16n *)malloc(lutsize * sizeof(v16n));
     int *result = (int *)malloc(50 * sizeof(int));
