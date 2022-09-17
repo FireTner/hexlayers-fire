@@ -1,6 +1,8 @@
 # hexlayers-fire
 SIMD Accelerated bruteforcer for getting the optimal hex layer
 
-Requires SSE3.0
+Requires atleast SSE3.0
 
-compile with -march=native and preferably -Ofast
+```
+gcc bruteforcer.c -Ofast -msse3 -march=native
+```
