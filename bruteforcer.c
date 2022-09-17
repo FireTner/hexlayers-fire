@@ -14,9 +14,8 @@ v16n t, one, zero;
 
 // unsafe; output the sequence until -1
 void outputSeq(int* sequence) {
-    for(int i = 0; sequence[i] != -1; i++) {
+    for(int i = 0; sequence[i] != -1; i++)
         printf("%d ", sequence[i]);
-    }
     printf("\n");
 }
 
@@ -65,22 +64,20 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
         u8 a  = (i & 0xF);
         u8 b  = (i & 0xF0) >> 4;
 
-
         x = _mm_max_epi8(
             comp(t, _mm_set1_epi8(a), ma),
             comp(_mm_set1_epi8(b), t, mb)
         );
 
-        if(_mm_testz_si128(_mm_xor_si128(x, t), one)) continue;
+        if(_mm_test_all_zeros(_mm_xor_si128(x, t), one)) continue;
         if(uniqueCount(x) < goaluc) continue;
-
+        
         int j;
         for(j = 0; j < newsize; j++)
-            if( _mm_testz_si128(_mm_xor_si128(x, lut[j]), one) )
+            if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
                 break;
 
-        if(j==newsize)
-            lut[newsize++] = x;
+        if(j==newsize) lut[newsize++] = x;
     }
 
     return newsize;
@@ -117,7 +114,7 @@ int main(int argc, char **argv) {
     // flip goal
     goal = _mm_shuffle_epi8(goal, _mm_sub_epi8(_mm_set1_epi8(0xF), t));
 
-    size_t lutsize = 739;
+    size_t lutsize = 1024;
     v16n *lut = (v16n *)malloc(lutsize * sizeof(v16n));
     int *result = (int *)malloc(50 * sizeof(int));
 
@@ -133,12 +130,12 @@ int main(int argc, char **argv) {
     printf("Starting the search");
     time_t start = clock();
     findSeq(goal, lut, lutsize, result);
-    printf("The search ended in %f\n", ((double)clock())/CLOCKS_PER_SEC);
+    printf("The search ended in %f\n", ((double)clock()-start)/CLOCKS_PER_SEC);
 
     // output the result
     outputSeq(result);
 
-    free(&lut);
-    free(&result);
+    free(lut);
+    free(result);
     return 0;
 }
