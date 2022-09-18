@@ -14,7 +14,7 @@ v16n t, one, zero;
 
 // unsafe; output the sequence until -1
 void outputSeq(int* sequence) {
-    for(int i = 0; sequence[i] != (int)-1; i++)
+    for(int i = 0; i<50; i++)
         printf("%d ", sequence[i]);
     printf("\n");
 }
@@ -52,6 +52,16 @@ v16n comp(v16n a, v16n b, u8 m) {
     return _mm_andnot_si128(_mm_cmplt_epi8(a, b), a);
 }
 
+// return the transformation of a by b
+inline __attribute__((always_inline)) v16n transform(v16n a, v16n b) {
+    return _mm_shuffle_epi8(a, b);
+}
+
+// check equality
+inline __attribute__((always_inline)) int equal(v16n a, v16n b) {
+    return _mm_movemask_epi8(_mm_cmpeq_epi8(a, b)) == 0xFFFF;
+}
+
 // generates look up table
 int genLut(v16n *lut, const v16n goal) {
     int newsize = 0;
@@ -69,12 +79,12 @@ int genLut(v16n *lut, const v16n goal) {
             comp(_mm_set1_epi8(b), t, mb)
         );
 
-        if(_mm_movemask_epi8(_mm_cmpeq_epi8(x, t)) == 0xFFFF) continue;
+        if(equal(x, t)) continue;
         if(uniqueCount(x) < goaluc) continue;
         
         int j;
         for(j = 0; j < newsize; j++)
-            if(_mm_movemask_epi8(_mm_cmpeq_epi8(x, lut[j])) == 0xFFFF)
+            if(equal(x, lut[j]))
                 break;
 
         if(j==newsize) lut[newsize++] = x;
@@ -83,22 +93,24 @@ int genLut(v16n *lut, const v16n goal) {
     return newsize;
 }
 
+
 void findSeq(const v16n goal, const v16n *lut, const int lutsize, int *result) {
-    memset(result, -1, 50*sizeof(int));
+    v16n prev[50];
+    for(int i = 0; i < 50; i++)
+        prev[i] = t;
 
     v16n x;
     do {
-        // increment counter
-        for(int i = 0; ++result[i]==lutsize; i++)
+        // increment
+        int i;
+        for(i = 0; result[i]++>=lutsize; i++)
             result[i] = 0;
 
-        // do cummulative lookup
-        x = t;
-        for(int i = 0; result[i]!=-1; i++)
-            x = _mm_shuffle_epi8(x, lut[result[i]]);
-        
-        // check equality
-    } while(!(_mm_movemask_epi8(_mm_cmpeq_epi8(x, goal)) == 0xFFFF));
+        // recalculate prev
+        for(; i>0; i--)
+            prev[i] = transform(prev[i+1], lut[result[i]]);
+        x = transform(prev[1], lut[result[i]]);
+    } while(!equal(prev[0], goal));
 }
 
 int main() {
@@ -108,14 +120,14 @@ int main() {
     zero = _mm_setzero_si128();
     
     v16n goal = _mm_set_epi8(
-         3, 3, 2, 2,12,13,11,10, 9, 8, 3, 2, 1, 0, 0, 1
+         5, 5, 4, 2, 2, 2, 2, 2, 8, 9,10,11,12,13,14,15
     );
     // flip goal
     goal = _mm_shuffle_epi8(goal, _mm_sub_epi8(_mm_set1_epi8(0xF), t));
 
     int lutsize = 1024;
     v16n *lut = (v16n *)malloc(lutsize * sizeof(v16n));
-    int *result = (int *)malloc(50 * sizeof(int));
+    int *result = (int *)calloc(50, sizeof(int));
 
     if(lut == NULL || result == NULL)
         printf("malloc failed\n");
@@ -126,7 +138,7 @@ int main() {
     printf("LUT generated with the size of %d\n", lutsize);
     
     // find the sequence
-    printf("Starting the search");
+    printf("Starting the search\n");
     time_t start = clock();
     findSeq(goal, lut, lutsize, result);
     printf("The search ended in %f\n", ((double)clock()-start)/CLOCKS_PER_SEC);
