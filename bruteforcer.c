@@ -108,7 +108,7 @@ int main() {
     zero = _mm_setzero_si128();
     
     v16n goal = _mm_set_epi8(
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+         3, 3, 2, 2,12,13,11,10, 9, 8, 3, 2, 1, 0, 0, 1
     );
     // flip goal
     goal = _mm_shuffle_epi8(goal, _mm_sub_epi8(_mm_set1_epi8(0xF), t));
