@@ -69,12 +69,12 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
             comp(_mm_set1_epi8(b), t, mb)
         );
 
-        if(_mm_test_all_zeros(_mm_xor_si128(x, t), one)) continue;
+        if(_mm_movemask_epi8(_mm_cmpeq_epi8(x, t)) == 0xFFFF) continue;
         if(uniqueCount(x) < goaluc) continue;
         
         int j;
         for(j = 0; j < newsize; j++)
-            if( _mm_test_all_zeros(_mm_xor_si128(x, lut[j]), one) )
+            if(_mm_movemask_epi8(_mm_cmpeq_epi8(x, lut[j])) == 0xFFFF)
                 break;
 
         if(j==newsize) lut[newsize++] = x;
@@ -98,18 +98,17 @@ void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result
             x = _mm_shuffle_epi8(x, lut[result[i]]);
         
         // check equality
-        x = _mm_xor_si128(x, goal);
-    } while(!_mm_testz_si128(x, one));
+    } while(!(_mm_movemask_epi8(_mm_cmpeq_epi8(x, goal)) == 0xFFFF));
 }
 
 int main(int argc, char **argv) {
     // initialize constants and variables
     t = _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
     one = _mm_set1_epi8(0xFF);
-    zero = _mm_set1_epi8(0);
+    zero = _mm_setzero_si128();
     
     v16n goal = _mm_set_epi8(
-        0, 1, 2, 4, 3, 5, 8, 7, 6, 9, 10, 11, 12, 13, 14, 15
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
     );
     // flip goal
     goal = _mm_shuffle_epi8(goal, _mm_sub_epi8(_mm_set1_epi8(0xF), t));
