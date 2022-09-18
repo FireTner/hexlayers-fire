@@ -14,7 +14,7 @@ v16n t, one, zero;
 
 // unsafe; output the sequence until -1
 void outputSeq(int* sequence) {
-    for(int i = 0; sequence[i] != -1; i++)
+    for(int i = 0; sequence[i] != (int)-1; i++)
         printf("%d ", sequence[i]);
     printf("\n");
 }
@@ -53,8 +53,8 @@ v16n comp(v16n a, v16n b, u8 m) {
 }
 
 // generates look up table
-size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
-    size_t newsize = 0;
+int genLut(v16n *lut, const v16n goal) {
+    int newsize = 0;
     v16n x;
     int goaluc = uniqueCount(goal);
 
@@ -83,7 +83,7 @@ size_t genLut(v16n *lut, size_t lutsize, const v16n goal) {
     return newsize;
 }
 
-void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result) {
+void findSeq(const v16n goal, const v16n *lut, const int lutsize, int *result) {
     memset(result, -1, 50*sizeof(int));
 
     v16n x;
@@ -101,7 +101,7 @@ void findSeq(const v16n goal, const v16n *lut, const size_t lutsize, int *result
     } while(!(_mm_movemask_epi8(_mm_cmpeq_epi8(x, goal)) == 0xFFFF));
 }
 
-int main(int argc, char **argv) {
+int main() {
     // initialize constants and variables
     t = _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
     one = _mm_set1_epi8(0xFF);
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     // flip goal
     goal = _mm_shuffle_epi8(goal, _mm_sub_epi8(_mm_set1_epi8(0xF), t));
 
-    size_t lutsize = 1024;
+    int lutsize = 1024;
     v16n *lut = (v16n *)malloc(lutsize * sizeof(v16n));
     int *result = (int *)malloc(50 * sizeof(int));
 
@@ -122,8 +122,8 @@ int main(int argc, char **argv) {
 
     // generate lut
     printf("Generating LUT\n");
-    lutsize = genLut(lut, lutsize, goal);
-    printf("LUT generated with the size of %zd\n", lutsize);
+    lutsize = genLut(lut, goal);
+    printf("LUT generated with the size of %d\n", lutsize);
     
     // find the sequence
     printf("Starting the search");
